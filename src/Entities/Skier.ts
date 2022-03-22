@@ -3,13 +3,13 @@
  * angles, and crashes into obstacles they run into. If caught by the rhino, the skier will get eaten and die.
  */
 
-import { IMAGE_NAMES, DIAGONAL_SPEED_REDUCER, KEYS } from "../Constants";
-import { Entity } from "./Entity";
+import { DIAGONAL_SPEED_REDUCER, IMAGE_NAMES, KEYS } from "../Constants";
 import { Canvas } from "../Core/Canvas";
 import { ImageManager } from "../Core/ImageManager";
 import { intersectTwoRects, Rect } from "../Core/Utils";
+import { Entity } from "./Entity";
+import { Obstacle } from "./Obstacles/Obstacle";
 import { ObstacleManager } from "./Obstacles/ObstacleManager";
-import {Obstacle} from "./Obstacles/Obstacle";
 
 /**
  * The skier starts running at this speed. Saved in case speed needs to be reset at any point.
@@ -23,7 +23,8 @@ const STARTING_SPEED: number = 10;
 enum STATES {
     STATE_SKIING = 'skiing',
     STATE_CRASHED = 'crashed',
-    STATE_DEAD = 'dead'
+    STATE_DEAD = 'dead',
+    STATE_JUMPING = 'jump'
 };
 
 /**
@@ -45,6 +46,17 @@ const DIRECTION_IMAGES: {[key: number]: IMAGE_NAMES} = {
     [DIRECTION_RIGHT_DOWN] : IMAGE_NAMES.SKIER_RIGHTDOWN,
     [DIRECTION_RIGHT] : IMAGE_NAMES.SKIER_RIGHT
 };
+
+/**
+ * Sequences of images that comprise the animations for the different states of the jumping skier.
+ */
+ const IMAGES_JUMPING: IMAGE_NAMES[] = [
+    IMAGE_NAMES.SKIER_JUMP1,
+    IMAGE_NAMES.SKIER_JUMP2,
+    IMAGE_NAMES.SKIER_JUMP3,
+    IMAGE_NAMES.SKIER_JUMP4,
+    IMAGE_NAMES.SKIER_JUMP5,
+];
 
 export class Skier extends Entity {
 
@@ -72,6 +84,16 @@ export class Skier extends Entity {
      * Stored reference to the ObstacleManager
      */
     obstacleManager: ObstacleManager;
+
+    /**
+     * Stores the current jumping state
+     */
+    jumpState: number = 0;
+
+     /**
+      * The current frame of the current animation the rhino is on.
+      */
+     curAnimationFrameInterval: any = null;
 
     /**
      * Init the skier.
@@ -104,18 +126,29 @@ export class Skier extends Entity {
     }
 
     /**
+     * Confirm if the skier is jumping
+     */
+    isJumping(): boolean {
+        return this.state === STATES.STATE_JUMPING;
+    }
+
+    /**
      * Set the current direction the skier is facing and update the image accordingly
      */
     setDirection(direction: number) {
         this.direction = direction;
-        this.setDirectionalImage();
+        this.setSkierImage();
     }
 
     /**
-     * Set the skier's image based upon the direction they're facing.
+     * Set the skier's image based upon the direction they're facing or jumping state.
      */
-    setDirectionalImage() {
-        this.imageName = DIRECTION_IMAGES[this.direction];
+    setSkierImage() {
+        if (this.isJumping()) {
+            this.imageName = IMAGES_JUMPING[this.jumpState];
+        } else {
+            this.imageName = DIRECTION_IMAGES[this.direction];
+        }
     }
 
     /**
@@ -232,6 +265,9 @@ export class Skier extends Entity {
             case KEYS.DOWN:
                 this.turnDown();
                 break;
+            case KEYS.JUMP:
+                this.jump();
+                break;
             default:
                 handled = false;
         }
@@ -300,6 +336,35 @@ export class Skier extends Entity {
     }
 
     /**
+     * Makes the skier jump
+     * @returns 
+     */
+    jump() {
+        if (this.isCrashed()) {
+            return;
+        }
+
+        this.state = STATES.STATE_JUMPING;
+        
+        this.curAnimationFrameInterval = setInterval(() => {
+            this.nextFrame();
+            this.moveSkierDown();
+        }, 50);
+    }
+
+    nextFrame() {
+        if (this.jumpState < IMAGES_JUMPING.length - 1) {
+            this.imageName = IMAGES_JUMPING[this.jumpState];
+            this.jumpState++;
+        } else {
+            this.jumpState = 0;
+            this.state = STATES.STATE_SKIING;
+            this.setSkierImage();
+            clearInterval(this.curAnimationFrameInterval);
+        }
+    }
+
+    /**
      * The skier has a bit different bounds calculating than a normal entity to make the collision with obstacles more
      * natural. We want te skier to end up in the obstacle rather than right above it when crashed, so move the bottom
      * boundary up.
@@ -327,7 +392,7 @@ export class Skier extends Entity {
             return;
         }
 
-        const collision = this.obstacleManager.getObstacles().find((obstacle: Obstacle): boolean => {
+        const collisionObject = this.obstacleManager.getObstacles().find((obstacle: Obstacle): boolean => {
             const obstacleBounds = obstacle.getBounds();
             if(!obstacleBounds) {
                 return false;
@@ -336,7 +401,17 @@ export class Skier extends Entity {
             return intersectTwoRects(skierBounds, obstacleBounds);
         });
 
-        if(collision) {
+        if (this.state === STATES.STATE_JUMPING && collisionObject && collisionObject?.imageName.indexOf('ROCK') > -1) {
+            return;
+        }            
+
+        if (this.state !== STATES.STATE_JUMPING && collisionObject && collisionObject.imageName === IMAGE_NAMES.JUMP_RAMP) {
+            this.state = STATES.STATE_JUMPING;
+            this.jump();
+            return;
+        }
+
+        if(collisionObject) {
             this.crash();
         }
     }
