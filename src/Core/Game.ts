@@ -2,13 +2,13 @@
  * The main game class. This initializes the game as well as runs the game/render loop and initial handling of input.
  */
 
-import { GAME_CANVAS, GAME_WIDTH, GAME_HEIGHT, IMAGES } from "../Constants";
+import { GAME_CANVAS, GAME_HEIGHT, GAME_WIDTH, IMAGES } from "../Constants";
+import { ObstacleManager } from "../Entities/Obstacles/ObstacleManager";
+import { Rhino } from "../Entities/Rhino";
+import { Skier } from "../Entities/Skier";
 import { Canvas } from './Canvas';
 import { ImageManager } from "./ImageManager";
 import { Position, Rect } from './Utils';
-import { ObstacleManager } from "../Entities/Obstacles/ObstacleManager";
-import { Rhino } from "../Entities/Rhino";
-import { Skier} from "../Entities/Skier";
 
 export class Game {
     /**
@@ -29,6 +29,8 @@ export class Game {
     private imageManager!: ImageManager;
 
     private obstacleManager!: ObstacleManager;
+
+    private paused: boolean = false;
 
     /**
      * The skier player
@@ -94,6 +96,8 @@ export class Game {
      * Do any updates needed to the game objects
      */
     updateGameWindow() {
+        if (this.paused) return;
+        
         this.gameTime = Date.now();
 
         const previousGameWindow: Rect = this.gameWindow;
@@ -101,7 +105,7 @@ export class Game {
 
         this.obstacleManager.placeNewObstacle(this.gameWindow, previousGameWindow);
 
-        this.skier.update();
+        this.skier.update(this.gameTime);
         this.rhino.update(this.gameTime, this.skier);
     }
 
@@ -134,6 +138,18 @@ export class Game {
      */
     handleKeyDown(event: KeyboardEvent) {
         let handled: boolean = this.skier.handleInput(event.key);
+
+        if (this.skier.isCrashed() || this.skier.isDead() && event.key === 'r') {
+            const skiGame: Game = new Game();
+            skiGame.load().then(() => {
+                skiGame.run()
+                handled = true;
+            });
+        }
+        
+        if (event.key === 'p') {
+            this.paused = !this.paused;
+        }
 
         if(handled) {
             event.preventDefault();

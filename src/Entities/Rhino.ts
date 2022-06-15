@@ -59,26 +59,6 @@ export class Rhino extends Entity {
     speed: number = STARTING_SPEED;
 
     /**
-     * Stores all of the animations available for the different states of the rhino.
-     */
-    animations: {[key: string]: Animation} = {};
-
-    /**
-     * The animation that the rhino is currently using. Typically matches the state the rhino is in.
-     */
-    curAnimation: Animation | null = null;
-
-    /**
-     * The current frame of the current animation the rhino is on.
-     */
-    curAnimationFrame: number = 0;
-
-    /**
-     * The time in ms of the last frame change. Used to provide a consistent framerate.
-     */
-    curAnimationFrameTime: number = Date.now();
-
-    /**
      * Initialize the rhino, get the animations setup and set the starting animation which will be based upon the
      * starting state.
      */
@@ -151,60 +131,6 @@ export class Rhino extends Entity {
 
         this.position.x += moveDirection.x * this.speed;
         this.position.y += moveDirection.y * this.speed;
-    }
-
-    /**
-     * Advance to the next frame in the current animation if enough time has elapsed since the previous frame.
-     */
-    animate(gameTime: number) {
-        if(!this.curAnimation) {
-            return;
-        }
-
-        if(gameTime - this.curAnimationFrameTime > ANIMATION_FRAME_SPEED_MS) {
-            this.nextAnimationFrame(gameTime);
-        }
-    }
-
-    /**
-     * Increase the current animation frame and update the image based upon the sequence of images for the animation.
-     * If the animation isn't looping, then finish the animation instead.
-     */
-    nextAnimationFrame(gameTime: number) {
-        if(!this.curAnimation) {
-            return;
-        }
-
-        const animationImages = this.curAnimation.getImages();
-
-        this.curAnimationFrameTime = gameTime;
-        this.curAnimationFrame++;
-        if (this.curAnimationFrame >= animationImages.length) {
-            if(!this.curAnimation.getLooping()) {
-                this.finishAnimation();
-                return;
-            }
-
-            this.curAnimationFrame = 0;
-        }
-
-        this.imageName = animationImages[this.curAnimationFrame];
-    }
-
-    /**
-     * The current animation wasn't looping, so finish it by clearing out the current animation and firing the callback.
-     */
-    finishAnimation() {
-        if(!this.curAnimation) {
-            return;
-        }
-
-        const animationCallback = this.curAnimation.getCallback();
-        this.curAnimation = null;
-
-        if(animationCallback) {
-            animationCallback.apply(null);
-        }
     }
 
     /**

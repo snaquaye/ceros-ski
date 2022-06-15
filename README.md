@@ -53,11 +53,16 @@ it better! Your solution can only gain from having a better foundation.
 
   Update this README file with your comments about your work.
   * What did you do and, more importantly, why you built it the way you did.
-  I added the required assets to load the jumping ramp and the set of images that shows the skier jumping. I also added the SpaceBar to the list of keyboard events to listen to and made it call a jump function that changes the asset of the skier showing him jump. The assets are changed every 50ms and when it gets to the length of the array holding the frames, it sets the state of the skier to `SKIING`. The Reason I used `setInterval` was because it was easier to manage.
+  `I added the required assets to load the jumping ramp and the set of images that shows the skier jumping. I also added the SpaceBar to the list of keyboard events to listen to and made it call a jump function that changes the asset of the skier showing him jump. `
+  
+  `I reused the animation class and moved the function handling animation from the Rhino class to the Entity class. This helped me reduce the amount of code that needed to be rewritten.`
+
+  `I also created created two lists one to contain obstacles that the skier can jump over and another that triggers the skier to jump. These lists were used to know if the skier should crash when he is in a jumping state or be triggered to jump when he isn't jumping and with this list as the type of obstacles grow the list could also grow as required.`
   * Are there any known bugs?
-  None that I could think of or experience
+  `None that I could think of or I experienced`
   * Did you do any bonus items?
-  No
+  1. I added the ability to pause the game
+  2. I also added the ability to restart the game when the skier crashes or is dead
   * Tell us how to run it, either locally or through a cloud provider.
   1. git clone the repository
   2. In the root folder run `npm i`
