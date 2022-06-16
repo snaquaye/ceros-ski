@@ -61,8 +61,8 @@ it better! Your solution can only gain from having a better foundation.
   * Are there any known bugs?
   `None that I could think of or I experienced`
   * Did you do any bonus items?
-  1. I added the ability to pause the game
-  2. I also added the ability to restart the game when the skier crashes or is dead
+  1. I added the ability to pause the game (pause by pressing p)
+  2. I also added the ability to restart the game when the skier crashes or is dead (restart by pressing r)
   * Tell us how to run it, either locally or through a cloud provider.
   1. git clone the repository
   2. In the root folder run `npm i`
